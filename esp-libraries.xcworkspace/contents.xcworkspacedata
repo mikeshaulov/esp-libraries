@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "group:config/config.h">
+   </FileRef>
+   <FileRef
+      location = "group:config/config.cpp">
+   </FileRef>
+   <Group
+      location = "container:"
+      name = "Servers">
+      <FileRef
+         location = "group:WiFiSettings/WiFiSettings.h">
+      </FileRef>
+      <FileRef
+         location = "group:servers/WiFiConfigurator.h">
+      </FileRef>
+      <FileRef
+         location = "group:servers/WiFiConfigurator.cpp">
+      </FileRef>
+   </Group>
+   <Group
+      location = "container:"
+      name = "switches">
+      <FileRef
+         location = "group:switches/switch.h">
+      </FileRef>
+   </Group>
+</Workspace>
