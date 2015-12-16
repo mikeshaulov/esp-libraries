@@ -40,6 +40,8 @@ void WiFiAPCaptive::start()
     ESP8266WebServer webServer(80);
     __WebServer = &webServer;
     webServer.serveStatic("/",SPIFFS,"/index.html");
+    webServer.serveStatic("/jquery.min.js",SPIFFS,"/jquery.min.js");
+    webServer.on("/scanwifis", handleScanWifis);
     webServer.on("/configure", handleConfigure);
     webServer.begin();
     
@@ -120,5 +122,28 @@ void WiFiAPCaptive::handleConfigure()
     // send successful response
     sendServerResponse("New settings saved",200);
     __bConfigured = true;
+}
+
+
+void WiFiAPCaptive::handleScanWifis()
+{
+    int n = WiFi.scanNetworks();
+
+    String json = "{";
+    
+    for (int i = 0; i < n; ++i) {
+        json += "\"" + String(i, DEC) + "\" : \"" + WiFi.SSID(i) + "\"";
+        
+        if(i < n-1)
+        {
+            json += ",";
+        }
+    }
+    
+    json += "}";
+    
+    DEBUG("WiFi Scann Json: " + json);
+    
+    sendServerResponse(json.c_str(),200);
 }
 

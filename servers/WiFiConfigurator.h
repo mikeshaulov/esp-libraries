@@ -38,6 +38,9 @@ private:
     // handle configuration request
     static void handleConfigure();
     
+    // handles scanned WiFis request
+    static void handleScanWifis();
+    
     
     String _ssid;
     
