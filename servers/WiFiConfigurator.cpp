@@ -17,20 +17,21 @@
 #include <ESP8266mDNS.h>
 #include <DNSServer.h>
 #include <WiFiConfigurator.h>
+#include <WiFiUpdater.h>
+#include <switch.h>
+
+bool WiFiConfigurator::__bConfigured = false;
+IConfiguration* WiFiConfigurator::__config = NULL;
+ESP8266WebServer* WiFiConfigurator::__WebServer = NULL;
 
 
-bool WiFiAPCaptive::__bConfigured = false;
-IConfiguration* WiFiAPCaptive::__config = NULL;
-ESP8266WebServer* WiFiAPCaptive::__WebServer = NULL;
-
-
-WiFiAPCaptive::WiFiAPCaptive(String ssid,IConfiguration* pConfig) : _ssid(ssid)
+WiFiConfigurator::WiFiConfigurator(String ssid,IConfiguration* pConfig) : _ssid(ssid)
 {
     __config = pConfig;
 }
 
 
-void WiFiAPCaptive::start()
+void WiFiConfigurator::startCaptive()
 {
     configureAP();
     
@@ -43,6 +44,8 @@ void WiFiAPCaptive::start()
     webServer.serveStatic("/jquery.min.js",SPIFFS,"/jquery.min.js");
     webServer.on("/scanwifis", handleScanWifis);
     webServer.on("/configure", handleConfigure);
+    WiFiUpdater::setup(webServer);
+    
     webServer.begin();
     
     DEBUG("captive webserver started");
@@ -62,7 +65,7 @@ void WiFiAPCaptive::start()
 
 
 // configure the access point
-void WiFiAPCaptive::configureAP()
+void WiFiConfigurator::configureAP()
 {
     DEBUG("initializing WiFi module to AP mode");
     /* Soft AP network parameters */
@@ -88,7 +91,7 @@ void WiFiAPCaptive::configureAP()
     DEBUG("setting up DNS server completed");
 }
 
-void WiFiAPCaptive::sendServerResponse(const char* responseStr, int errorCode)
+void WiFiConfigurator::sendServerResponse(const char* responseStr, int errorCode)
 {
     __WebServer->sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     __WebServer->sendHeader("Pragma", "no-cache");
@@ -99,7 +102,7 @@ void WiFiAPCaptive::sendServerResponse(const char* responseStr, int errorCode)
 }
 
 // handle configuration request
-void WiFiAPCaptive::handleConfigure()
+void WiFiConfigurator::handleConfigure()
 {
     DEBUG("Handling new captive configuration...");
     if(!__config->beginUpdate())
@@ -125,7 +128,7 @@ void WiFiAPCaptive::handleConfigure()
 }
 
 
-void WiFiAPCaptive::handleScanWifis()
+void WiFiConfigurator::handleScanWifis()
 {
     int n = WiFi.scanNetworks();
 
@@ -147,3 +150,80 @@ void WiFiAPCaptive::handleScanWifis()
     sendServerResponse(json.c_str(),200);
 }
 
+void WiFiConfigurator::connectToWiFi(CBaseSwitch* pLed)
+{
+    String wifiName = __config->getValue("WIFI_NAME");
+    String wifiPassword = __config->getValue("WIFI_PASSWORD");
+    wifiName.trim();
+    wifiPassword.trim();
+    
+    DEBUG("connecting to WiFi: [" + wifiName + "," + wifiPassword + "]");
+    // connect to WiFi
+    WiFi.mode(WIFI_STA);
+    if(!wifiPassword.length())
+    {
+        WiFi.begin(wifiName.c_str());
+    }
+    else{
+        WiFi.begin(wifiName.c_str(), wifiPassword.c_str());
+    }
+    
+    
+    int retries = 0;
+    bool ledState = false;
+    
+    // loop until we are conected to the WiFi
+    while ((WiFi.status() != WL_CONNECTED) && (retries++ < MAX_WIFI_CONNECT_RETRY)) {
+        
+        if(pLed)
+        {
+            ledState = !ledState;
+            pLed->TurnBool(ledState);
+        }
+        delay(500);
+        Serial.print(".");
+    
+        // every small interval wait pause for a while, as the router might expiriencing downtime
+        if((retries % MAX_WIFI_CONNECT_RETRY_SMALL_INTERVALS) == 0)
+            delay(MAX_WIFI_CONNECT_RETRY_INTERVAL_DELAY);
+    }
+    
+    if(WiFi.status() != WL_CONNECTED)
+    {
+        DEBUG("max retries reached, clearing settings and restarting");
+        __config->clearAll();
+        ESP.restart();
+    }
+    
+    // reset reconnect counter
+    _reconnect_retry = 0;
+    
+    DEBUG("WiFi connected");
+    DEBUG("IP address: ");
+    DEBUG(WiFi.localIP());
+
+    if(pLed)
+    {
+        pLed->TurnOff();
+    }
+}
+
+bool WiFiConfigurator::checkWiFiConnectivity(CBaseSwitch* pErrorLed)
+{
+    if(WiFi.status() != WL_CONNECTED)
+    {
+        if(pErrorLed)
+            pErrorLed->TurnOn();
+        
+        DEBUG("WiFi connection lost - restarting ESP, [status] " + String(WiFi.status(), DEC));
+        if(_reconnect_retry++ > MAX_WIFI_RECONNECT_RETRY)
+        {
+            // restart to initiate reconnecting loop
+            ESP.restart();
+        }
+        return false;
+    }
+    
+    _reconnect_retry = 0;
+    return true;
+}

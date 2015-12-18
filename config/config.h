@@ -25,6 +25,7 @@ public:
     virtual bool beginUpdate() = 0;
     virtual void endUpdate() = 0;
     virtual void updateValue(const char* key, const char* val) = 0;
+    virtual void clearAll() = 0;
 };
 
 /***

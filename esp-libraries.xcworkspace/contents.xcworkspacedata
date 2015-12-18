@@ -19,6 +19,12 @@
       <FileRef
          location = "group:servers/WiFiConfigurator.cpp">
       </FileRef>
+      <FileRef
+         location = "group:servers/WiFiUpdater.cpp">
+      </FileRef>
+      <FileRef
+         location = "group:/Users/michael/Documents/Arduino/libraries/servers/WiFiUpdater.h">
+      </FileRef>
    </Group>
    <Group
       location = "container:"
