@@ -51,4 +51,13 @@ void WiFiUpdater::setup(ESP8266WebServer& webServer)
         webServer.send(200, "text/plain", (Update.hasError())?"FAIL":"OK");
         ESP.restart();
     });
+    
+    webServer.on("/version",[&webServer](){
+        webServer.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        webServer.sendHeader("Pragma", "no-cache");
+        webServer.sendHeader("Expires", "-1");
+        webServer.send(200, "text/html", ""); // Empty content inhibits Content-length header so we have to close the socket ourselves.
+        webServer.sendContent(CODE_VERSION);
+        webServer.client().stop();
+    });
 }

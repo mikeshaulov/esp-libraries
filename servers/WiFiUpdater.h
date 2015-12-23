@@ -9,6 +9,7 @@
 #ifndef WiFiUpdater_hpp
 #define WiFiUpdater_hpp
 
+extern const char* CODE_VERSION; /* This should be declared in the main sketch file */
 
 class WiFiUpdater
 {

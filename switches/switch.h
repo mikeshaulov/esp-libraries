@@ -61,6 +61,8 @@ class CLed : public CBaseSwitch
 {
 public:
     CLed(int pin) : CBaseSwitch(pin, HIGH, LOW){}
+    
+    void Blink(int milli) {TurnOn(); delay(milli); TurnOff();}
 };
 
 

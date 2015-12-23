@@ -17,6 +17,9 @@
          location = "group:servers/WiFiConfigurator.h">
       </FileRef>
       <FileRef
+         location = "group:../heat_sensor/logger.py">
+      </FileRef>
+      <FileRef
          location = "group:servers/WiFiConfigurator.cpp">
       </FileRef>
       <FileRef
