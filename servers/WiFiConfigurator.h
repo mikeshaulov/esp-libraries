@@ -38,8 +38,14 @@ public:
     /**
      tries to connect to the WiFi, if failed will clear the configuration and reboot
      @param pLed    led to blink during configuration
+     @param maxRetries  maximum number of retries
      */
-    void connectToWiFi(CBaseSwitch* pLed = NULL);
+    void connectToWiFi(CBaseSwitch* pLed = NULL, int maxRetries = MAX_WIFI_CONNECT_RETRY);
+    
+    /**
+     starts MDNS services based on configuration
+     */
+    void startMDNS();
     
     
     /**
@@ -60,6 +66,8 @@ private:
     
     // handles scanned WiFis request
     static void handleScanWifis();
+    
+    static void urldecode2(char *dst, const char *src, int maxSize);
     
     // the SSID for the settings captive portal
     String _ssid;

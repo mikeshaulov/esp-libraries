@@ -19,22 +19,26 @@ private:
     int m_pin;
     int m_onMode;
     int m_offMode;
+    bool m_state;
     
 public:
     CBaseSwitch(int pin, int onMode, int offMode) : m_pin(pin), m_onMode(onMode), m_offMode(offMode)
     {
         pinMode(m_pin, OUTPUT);
         TurnOff();
+        m_state = false;
     }
     
     void TurnOn()
     {
         digitalWrite(m_pin, m_onMode);
+        m_state = true;
     }
     
     void TurnOff()
     {
         digitalWrite(m_pin, m_offMode);
+        m_state = false;
     }
     
     void TurnBool(bool bOn)
@@ -46,6 +50,13 @@ public:
             TurnOff();
         }
     }
+    
+    bool GetState() const
+    {
+        return m_state;
+    }
+    
+    void Blink(int milli) {TurnOn(); delay(milli); TurnOff();}
 };
 
 // switch that sets LOW when turned on and HIGH when turned off
@@ -61,8 +72,6 @@ class CLed : public CBaseSwitch
 {
 public:
     CLed(int pin) : CBaseSwitch(pin, HIGH, LOW){}
-    
-    void Blink(int milli) {TurnOn(); delay(milli); TurnOff();}
 };
 
 

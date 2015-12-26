@@ -110,12 +110,17 @@ void WiFiConfigurator::handleConfigure()
         sendServerResponse("failed to update settings",500);
         return;
     }
+    
+    char urlDecodeBuff[256];
+    
     // save settings in file
     int totalArgs = __WebServer->args();
     for(int i =0; i < totalArgs; ++i)
     {
-        String key = __WebServer->argName(i);
-        String val = __WebServer->arg(i);
+        urldecode2((char*)urlDecodeBuff, __WebServer->argName(i).c_str(), sizeof(urlDecodeBuff));
+        String key = urlDecodeBuff;
+        urldecode2((char*)urlDecodeBuff, __WebServer->arg(i).c_str(), sizeof(urlDecodeBuff));
+        String val = urlDecodeBuff;
         DEBUG("saving: " + key + "=" + val);
         __config->updateValue(key.c_str(),val.c_str());
     }
@@ -150,7 +155,7 @@ void WiFiConfigurator::handleScanWifis()
     sendServerResponse(json.c_str(),200);
 }
 
-void WiFiConfigurator::connectToWiFi(CBaseSwitch* pLed)
+void WiFiConfigurator::connectToWiFi(CBaseSwitch* pLed,int maxRetries)
 {
     String wifiName = __config->getValue("WIFI_NAME");
     String wifiPassword = __config->getValue("WIFI_PASSWORD");
@@ -173,7 +178,7 @@ void WiFiConfigurator::connectToWiFi(CBaseSwitch* pLed)
     bool ledState = false;
     
     // loop until we are conected to the WiFi
-    while ((WiFi.status() != WL_CONNECTED) && (retries++ < MAX_WIFI_CONNECT_RETRY)) {
+    while ((WiFi.status() != WL_CONNECTED) && (retries++ < maxRetries)) {
         
         if(pLed)
         {
@@ -226,4 +231,52 @@ bool WiFiConfigurator::checkWiFiConnectivity(CBaseSwitch* pErrorLed)
     
     _reconnect_retry = 0;
     return true;
+}
+
+void WiFiConfigurator::startMDNS()
+{
+    String mdnsName = __config->getValue("MDNS_NAME");
+    mdnsName.trim();
+    DEBUG("setting up MDNS name " + mdnsName);
+    // setup MDNS
+    if (!MDNS.begin(mdnsName.c_str())) {
+        DEBUG("Error setting up MDNS responder!");
+    }
+    else{
+        DEBUG("mDNS responder started");
+    }
+}
+
+
+void WiFiConfigurator::urldecode2(char *dst, const char *src, int maxSize)
+{
+    int size = 0;
+    char a, b;
+    while (*src) {
+        if ((*src == '%') &&
+            ((a = src[1]) && (b = src[2])) &&
+            (isxdigit(a) && isxdigit(b))) {
+            if (a >= 'a')
+                a -= 'a'-'A';
+            if (a >= 'A')
+                a -= ('A' - 10);
+            else
+                a -= '0';
+            if (b >= 'a')
+                b -= 'a'-'A';
+            if (b >= 'A')
+                b -= ('A' - 10);
+            else
+                b -= '0';
+            *dst++ = 16*a+b;
+            src+=3;
+        } 
+        else {
+            *dst++ = *src++;
+        }
+        
+        if(size++ > maxSize)
+            break;
+    }
+    *dst++ = '\0';
 }

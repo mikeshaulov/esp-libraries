@@ -37,6 +37,8 @@ String IniFile::getValue(const char* key) {
     
     f.close();
     
+    // remove cartage return
+    result.replace("\r","");
     return result;
 }
 

@@ -2,3 +2,5 @@
 esptool/
 
 DHT-sensor-library/
+
+PubSubClient/
